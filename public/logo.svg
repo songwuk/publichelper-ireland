@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 112" role="img" aria-label="Public Service Guide Ireland logo">
+  <g>
+    <rect x="8" y="8" width="96" height="96" rx="22" fill="#123f33"/>
+    <path d="M27 42 56 25l29 17v6H27z" fill="#f6f8f5"/>
+    <path d="M34 53h44v25H34z" fill="#f6f8f5"/>
+    <path d="M29 82h54v8H29z" fill="#f6f8f5"/>
+    <path d="M42 54v23M51 54v23M62 54v23M71 54v23" stroke="#123f33" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="56" cy="41" r="6" fill="#f08b45"/>
+    <path d="M39 67h12l6-8 6 8h12" fill="none" stroke="#6aa84f" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M36 93h40" stroke="#f08b45" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g fill="#13201b">
+    <text x="124" y="48" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="800" letter-spacing="0">Public Service Guide</text>
+    <text x="124" y="78" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="650" letter-spacing="0" fill="#1c6b52">Ireland</text>
+  </g>
+</svg>

@@ -1,0 +1,23 @@
+{
+  "name": "Public Service Guide Ireland",
+  "short_name": "Ireland Guide",
+  "description": "Independent guide to Irish public services and official e-services.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f5",
+  "theme_color": "#124a3a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "420x112",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

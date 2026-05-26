@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Public Service Guide Ireland icon">
+  <rect width="128" height="128" rx="28" fill="#123f33"/>
+  <path d="M24 45 64 22l40 23v8H24z" fill="#f6f8f5"/>
+  <path d="M34 58h60v32H34z" fill="#f6f8f5"/>
+  <path d="M25 94h78v10H25z" fill="#f6f8f5"/>
+  <path d="M42 58v32M54 58v32M74 58v32M86 58v32" stroke="#123f33" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="64" cy="43" r="8" fill="#f08b45"/>
+  <path d="M39 76h17l8-11 8 11h17" fill="none" stroke="#6aa84f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 108h60" stroke="#f08b45" stroke-width="7" stroke-linecap="round"/>
+</svg>
