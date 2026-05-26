@@ -22,6 +22,9 @@ const language = ref(loadLanguage());
 const mobileMenuOpen = ref(false);
 const installPrompt = ref(null);
 const progress = ref(loadProgress());
+const systemUpdateStatus = ref(updateStatus);
+const routeViews = new Set(["guides", "services", "agencies", "about"]);
+const appBasePath = new URL(import.meta.env.BASE_URL, window.location.origin).pathname.replace(/\/$/, "");
 const dateLocales = {
   en: "en-IE",
   zh: "zh-CN",
@@ -88,15 +91,18 @@ const selectedGuide = computed(() => guides.value.find((guide) => guide.id === s
 const heroStyle = computed(() => ({
   backgroundImage: `linear-gradient(90deg, rgba(10, 42, 32, 0.92), rgba(18, 74, 58, 0.76) 48%, rgba(15, 33, 45, 0.42)), url("${heroImage}")`,
 }));
-const formattedSystemUpdate = computed(() =>
-  new Intl.DateTimeFormat(dateLocales[language.value] || "en-IE", {
+const formattedSystemUpdate = computed(() => {
+  const date = new Date(systemUpdateStatus.value?.lastSystemUpdateAt || updateStatus.lastSystemUpdateAt);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(dateLocales[language.value] || "en-IE", {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(updateStatus.lastSystemUpdateAt)),
-);
+  }).format(date);
+});
 
 const popularGuides = computed(() => guides.value.slice(0, 4));
 const highlightedServices = computed(() => services.value.filter((service) => service.highlight).slice(0, 8));
@@ -227,7 +233,7 @@ function openGuide(id) {
   selectedGuideId.value = id;
   currentView.value = "guide";
   mobileMenuOpen.value = false;
-  window.history.replaceState(null, "", `#guide/${id}`);
+  updateBrowserRoute({ view: "guide", guideId: id });
   resetScroll(true);
 }
 
@@ -235,7 +241,7 @@ function go(view) {
   currentView.value = view;
   if (view !== "guide") selectedGuideId.value = "";
   mobileMenuOpen.value = false;
-  window.history.replaceState(null, "", view === "home" ? "#" : `#${view}`);
+  updateBrowserRoute({ view });
   resetScroll(true);
 }
 
@@ -254,22 +260,83 @@ async function installApp() {
   installPrompt.value = null;
 }
 
-function syncFromHash() {
-  const hash = window.location.hash.replace(/^#/, "");
-  if (hash.startsWith("guide/")) {
-    const guideId = hash.replace("guide/", "");
-    if (guides.value.some((guide) => guide.id === guideId)) {
-      selectedGuideId.value = guideId;
-      currentView.value = "guide";
-      nextTick(resetScroll);
-      return;
+async function loadRemoteUpdateStatus() {
+  try {
+    const response = await fetch("/api/status", {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+
+    const status = await response.json();
+    if (status?.lastSystemUpdateAt) {
+      systemUpdateStatus.value = status;
     }
+  } catch {
+    systemUpdateStatus.value = updateStatus;
+  }
+}
+
+function routeToPath({ view, guideId }) {
+  if (view === "guide" && guideId) return withBasePath(`/guide/${encodeURIComponent(guideId)}`);
+  if (view && view !== "home") return withBasePath(`/${view}`);
+  return withBasePath("/");
+}
+
+function withBasePath(path) {
+  return appBasePath ? `${appBasePath}${path}` : path;
+}
+
+function currentAppPath() {
+  let path = window.location.pathname;
+  if (appBasePath && path.startsWith(appBasePath)) {
+    path = path.slice(appBasePath.length) || "/";
+  }
+  return path.replace(/\/+$/, "") || "/";
+}
+
+function parseRoute() {
+  const legacyHash = window.location.hash.replace(/^#/, "");
+  if (legacyHash.startsWith("guide/")) {
+    return { view: "guide", guideId: legacyHash.replace("guide/", ""), legacyHash: true };
+  }
+  if (routeViews.has(legacyHash)) {
+    return { view: legacyHash, legacyHash: true };
   }
 
-  if (["guides", "services", "agencies", "about"].includes(hash)) {
-    currentView.value = hash;
-    nextTick(resetScroll);
+  const parts = currentAppPath().split("/").filter(Boolean);
+  if (parts[0] === "guide" && parts[1]) {
+    return { view: "guide", guideId: decodeURIComponent(parts[1]) };
   }
+  if (routeViews.has(parts[0])) {
+    return { view: parts[0] };
+  }
+  return { view: "home" };
+}
+
+function applyRoute(route) {
+  if (route.view === "guide" && guides.value.some((guide) => guide.id === route.guideId)) {
+    selectedGuideId.value = route.guideId;
+    currentView.value = "guide";
+    return { view: "guide", guideId: route.guideId };
+  }
+
+  selectedGuideId.value = "";
+  currentView.value = routeViews.has(route.view) ? route.view : "home";
+  return { view: currentView.value };
+}
+
+function updateBrowserRoute(route, replace = false) {
+  const path = routeToPath(route);
+  if (window.location.pathname === path && !window.location.hash) return;
+  window.history[replace ? "replaceState" : "pushState"](null, "", path);
+}
+
+function syncFromLocation() {
+  const route = parseRoute();
+  const activeRoute = applyRoute(route);
+  if (route.legacyHash) updateBrowserRoute(activeRoute, true);
+  nextTick(resetScroll);
 }
 
 function resetScroll(smooth = false) {
@@ -280,9 +347,10 @@ function resetScroll(smooth = false) {
 }
 
 onMounted(() => {
-  syncFromHash();
+  syncFromLocation();
+  loadRemoteUpdateStatus();
   document.documentElement.lang = language.value;
-  window.addEventListener("hashchange", syncFromHash);
+  window.addEventListener("popstate", syncFromLocation);
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt.value = event;
@@ -299,43 +367,47 @@ watch(language, (value) => {
   <a class="skip-link" href="#content">{{ t("skip") }}</a>
 
   <header class="site-header">
-    <button class="brand" type="button" @click="go('home')" :aria-label="t('navHome')">
-      <img class="brand-mark" src="/icon.svg" alt="" aria-hidden="true" />
-      <span>
-        <strong>{{ t("brandTitle") }}</strong>
-        <small>{{ t("country") }}</small>
-      </span>
-    </button>
-
-    <button class="menu-toggle" type="button" @click="mobileMenuOpen = !mobileMenuOpen">
-      {{ t("menu") }}
-    </button>
-
-    <nav class="top-nav" :class="{ open: mobileMenuOpen }" :aria-label="t('primaryNavigation')">
-      <button type="button" :class="{ active: currentView === 'home' }" @click="go('home')">{{ t("navHome") }}</button>
-      <button type="button" :class="{ active: currentView === 'guides' || currentView === 'guide' }" @click="go('guides')">
-        {{ t("navGuides") }}
+    <div class="header-brand-row">
+      <button class="brand" type="button" @click="go('home')" :aria-label="t('navHome')">
+        <img class="brand-mark" src="/icon.svg" alt="" aria-hidden="true" />
+        <span>
+          <strong>{{ t("brandTitle") }}</strong>
+          <small>{{ t("country") }}</small>
+        </span>
       </button>
-      <button type="button" :class="{ active: currentView === 'services' }" @click="go('services')">{{ t("navServices") }}</button>
-      <button type="button" :class="{ active: currentView === 'agencies' }" @click="go('agencies')">{{ t("navAgencies") }}</button>
-      <button type="button" :class="{ active: currentView === 'about' }" @click="go('about')">{{ t("navAbout") }}</button>
 
-      <div class="language-switcher" role="group" :aria-label="t('language')">
-        <span>{{ t("language") }}</span>
-        <div class="language-options">
-          <button
-            v-for="locale in locales"
-            :key="locale.code"
-            type="button"
-            :class="{ active: language === locale.code }"
-            :aria-pressed="language === locale.code"
-            @click="language = locale.code"
-          >
-            {{ locale.short }}
-          </button>
+      <nav class="top-nav" :class="{ open: mobileMenuOpen }" :aria-label="t('primaryNavigation')">
+        <button type="button" :class="{ active: currentView === 'home' }" @click="go('home')">{{ t("navHome") }}</button>
+        <button type="button" :class="{ active: currentView === 'guides' || currentView === 'guide' }" @click="go('guides')">
+          {{ t("navGuides") }}
+        </button>
+        <button type="button" :class="{ active: currentView === 'services' }" @click="go('services')">{{ t("navServices") }}</button>
+        <button type="button" :class="{ active: currentView === 'agencies' }" @click="go('agencies')">{{ t("navAgencies") }}</button>
+        <button type="button" :class="{ active: currentView === 'about' }" @click="go('about')">{{ t("navAbout") }}</button>
+      </nav>
+
+      <div class="header-actions">
+        <div class="language-switcher" role="group" :aria-label="t('language')">
+          <span>{{ t("language") }}</span>
+          <div class="language-options">
+            <button
+              v-for="locale in locales"
+              :key="locale.code"
+              type="button"
+              :class="{ active: language === locale.code }"
+              :aria-pressed="language === locale.code"
+              @click="language = locale.code"
+            >
+              {{ locale.short }}
+            </button>
+          </div>
         </div>
+
+        <button class="menu-toggle" type="button" @click="mobileMenuOpen = !mobileMenuOpen">
+          {{ t("menu") }}
+        </button>
       </div>
-    </nav>
+    </div>
   </header>
 
   <main id="content">
