@@ -94,7 +94,12 @@ const heroStyle = computed(() => ({
   backgroundImage: `linear-gradient(90deg, rgba(10, 42, 32, 0.92), rgba(18, 74, 58, 0.76) 48%, rgba(15, 33, 45, 0.42)), url("${heroImage}")`,
 }));
 const formattedSystemUpdate = computed(() => {
-  const date = new Date(systemUpdateStatus.value?.lastSystemUpdateAt || updateStatus.lastSystemUpdateAt);
+  const updateTime =
+    systemUpdateStatus.value?.lastSuccessfulUpdateAt ||
+    systemUpdateStatus.value?.lastSystemUpdateAt ||
+    updateStatus.lastSuccessfulUpdateAt ||
+    updateStatus.lastSystemUpdateAt;
+  const date = new Date(updateTime);
   if (Number.isNaN(date.getTime())) return "";
 
   return new Intl.DateTimeFormat(dateLocales[language.value] || "en-IE", {
@@ -296,7 +301,7 @@ async function loadRemoteUpdateStatus() {
     if (!response.ok) return;
 
     const status = await response.json();
-    if (status?.lastSystemUpdateAt) {
+    if (status?.lastSuccessfulUpdateAt || status?.lastSystemUpdateAt) {
       systemUpdateStatus.value = status;
     }
   } catch {

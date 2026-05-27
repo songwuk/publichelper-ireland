@@ -152,6 +152,9 @@ export async function updateAllInformation({
   fetchConcurrency = DEFAULT_FETCH_CONCURRENCY,
   userAgent = DEFAULT_USER_AGENT,
 } = {}) {
+  const previousStatus = storage
+    ? await readStoredStatus(storage, createDefaultStatus(updatedBy))
+    : createDefaultStatus(updatedBy);
   const startedAt = new Date();
   const sources = collectSources();
   const results = await mapWithConcurrency(sources, fetchConcurrency, (source) =>
@@ -161,32 +164,52 @@ export async function updateAllInformation({
   const successCount = results.filter((result) => result.ok).length;
   const failureCount = results.length - successCount;
   const completedAt = new Date();
+  const completedAtIso = completedAt.toISOString();
+  const hasSuccessfulFetch = !dryRun && successCount > 0;
+  const preservedSystemUpdateAt =
+    previousStatus.lastSystemUpdateAt || previousStatus.lastSuccessfulUpdateAt || null;
+  const lastSystemUpdateAt = hasSuccessfulFetch ? completedAtIso : preservedSystemUpdateAt;
+  const lastSuccessfulUpdateAt = hasSuccessfulFetch
+    ? completedAtIso
+    : previousStatus.lastSuccessfulUpdateAt || preservedSystemUpdateAt;
+  const statusKind = dryRun
+    ? "dry-run"
+    : failureCount === 0
+      ? "updated"
+      : successCount > 0
+        ? "updated-with-errors"
+        : "update-failed";
+  const message = dryRun
+    ? "Dry run completed. No remote pages were fetched."
+    : successCount === 0
+      ? `Update attempt failed. Preserved the previous successful system update time while checking ${results.length} official source URLs.`
+      : `Checked ${results.length} official source URLs for current information.`;
   const status = {
-    status: failureCount === 0 ? "updated" : "updated-with-errors",
-    lastSystemUpdateAt: completedAt.toISOString(),
-    lastAttemptAt: completedAt.toISOString(),
-    lastSuccessfulUpdateAt: successCount > 0 ? completedAt.toISOString() : null,
-    nextScheduledUpdateAt: new Date(completedAt.getTime() + WEEK_MS).toISOString(),
+    status: statusKind,
+    lastSystemUpdateAt,
+    lastAttemptAt: completedAtIso,
+    lastSuccessfulUpdateAt,
+    nextScheduledUpdateAt: dryRun
+      ? previousStatus.nextScheduledUpdateAt
+      : new Date(completedAt.getTime() + WEEK_MS).toISOString(),
     sourceCount: results.length,
     successCount,
     failureCount,
     updatedBy,
-    message: dryRun
-      ? "Dry run completed. No remote pages were fetched."
-      : `Checked ${results.length} official source URLs for current information.`,
+    message,
   };
 
   const snapshot = {
     reason,
     dryRun,
     startedAt: startedAt.toISOString(),
-    completedAt: completedAt.toISOString(),
+    completedAt: completedAtIso,
     durationMs: completedAt.getTime() - startedAt.getTime(),
     status,
     results,
   };
 
-  if (storage) {
+  if (storage && !dryRun) {
     await storage.writeSnapshot(snapshot);
     await storage.writeStatus(status);
   }
