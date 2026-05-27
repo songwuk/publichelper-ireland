@@ -1,12 +1,12 @@
 {
-  "status": "updated",
-  "lastSystemUpdateAt": "2026-05-26T18:30:29.198Z",
-  "lastAttemptAt": "2026-05-26T18:30:29.198Z",
-  "lastSuccessfulUpdateAt": "2026-05-26T18:30:29.198Z",
-  "nextScheduledUpdateAt": "2026-06-02T18:30:29.198Z",
-  "sourceCount": 60,
-  "successCount": 60,
-  "failureCount": 0,
+  "status": "updated-with-errors",
+  "lastSystemUpdateAt": "2026-05-27T19:24:42.010Z",
+  "lastAttemptAt": "2026-05-27T19:24:42.010Z",
+  "lastSuccessfulUpdateAt": "2026-05-27T19:24:42.010Z",
+  "nextScheduledUpdateAt": "2026-06-03T19:24:42.010Z",
+  "sourceCount": 64,
+  "successCount": 53,
+  "failureCount": 11,
   "updatedBy": "node-weekly-update-service",
-  "message": "Dry run completed. No remote pages were fetched."
+  "message": "Checked 64 official source URLs for current information."
 }

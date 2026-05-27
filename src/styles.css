@@ -734,6 +734,118 @@ p {
   top: 96px;
 }
 
+.guide-main {
+  display: grid;
+  gap: 16px;
+}
+
+.document-guide-card {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.document-guide-card > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.document-guide-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.document-guide-head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+
+.document-guide-head > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #eaf0f8;
+  color: var(--blue);
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.document-estimate {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6f8f5;
+  padding: 12px;
+}
+
+.document-estimate span,
+.document-sources > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.document-estimate strong {
+  color: var(--green);
+  line-height: 1.35;
+}
+
+.document-guide-card h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.document-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-list li {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.document-list span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.document-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.document-sources a {
+  border-radius: 8px;
+  background: #ecf4ef;
+  color: var(--green);
+  padding: 8px 10px;
+  text-decoration: none;
+  font-weight: 850;
+}
+
+.document-sources a:hover {
+  background: var(--green);
+  color: #ffffff;
+}
+
 .step-list {
   display: grid;
   gap: 14px;
@@ -1153,6 +1265,7 @@ p {
 
   .step-heading,
   .step-footer,
+  .document-guide-head,
   .guide-card footer,
   .agency-card footer {
     align-items: start;

@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import {
   agencies as baseAgencies,
   categories as baseCategories,
+  guideDocumentGuides as baseGuideDocumentGuides,
   guides as baseGuides,
   heroImage,
   services as baseServices,
@@ -71,6 +72,7 @@ const guides = computed(() =>
     intro: tr(guide.intro),
     time: tr(guide.time),
     searchText: `${guide.title} ${guide.intro} ${guide.category} ${tr(guide.title)} ${tr(guide.intro)} ${tr(guide.category)}`,
+    documentGuide: localizeDocumentGuide(baseGuideDocumentGuides[guide.id]),
     steps: guide.steps.map((step) => ({
       ...step,
       title: tr(step.title),
@@ -161,6 +163,31 @@ function t(key, params) {
 
 function tr(text) {
   return textMap.value[text] || text;
+}
+
+function l10n(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value[language.value] || value.en || "";
+  }
+
+  return tr(value);
+}
+
+function localizeDocumentGuide(documentGuide) {
+  if (!documentGuide) return null;
+
+  return {
+    estimate: l10n(documentGuide.estimate),
+    note: l10n(documentGuide.note),
+    items: documentGuide.items.map((item) => ({
+      label: l10n(item.label),
+      detail: l10n(item.detail),
+    })),
+    sources: documentGuide.sources.map((source) => ({
+      ...source,
+      label: l10n(source.label),
+    })),
+  };
 }
 
 function loadLanguage() {
@@ -604,33 +631,75 @@ watch(language, (value) => {
           </div>
         </div>
 
-        <ol class="step-list">
-          <li v-for="(step, index) in selectedGuide.steps" :key="step.title" class="step-card">
-            <label class="step-check">
-              <input
-                type="checkbox"
-                :checked="isStepDone(selectedGuide.id, index)"
-                @change="toggleStep(selectedGuide.id, index)"
-              />
-              <span>{{ index + 1 }}</span>
-            </label>
-
-            <div class="step-content">
-              <div class="step-heading">
-                <div>
-                  <h2>{{ step.title }}</h2>
-                  <p>{{ step.detail }}</p>
-                </div>
-                <span v-if="step.important" class="important">{{ t("important") }}</span>
+        <div class="guide-main">
+          <article v-if="selectedGuide.documentGuide" class="document-guide-card">
+            <div class="document-guide-head">
+              <div>
+                <p class="eyebrow">{{ t("documentGuideEyebrow") }}</p>
+                <h2>{{ t("documentGuideTitle") }}</h2>
               </div>
-
-              <div class="step-footer">
-                <span>{{ getAgency(step.agency)?.short }}</span>
-                <a v-if="step.service" :href="step.service" target="_blank" rel="noreferrer">{{ t("goToService") }}</a>
-              </div>
+              <span>{{ t("officialTiming") }}</span>
             </div>
-          </li>
-        </ol>
+
+            <p>{{ selectedGuide.documentGuide.note }}</p>
+
+            <div class="document-estimate">
+              <span>{{ t("approxCompletion") }}</span>
+              <strong>{{ selectedGuide.documentGuide.estimate }}</strong>
+            </div>
+
+            <div>
+              <h3>{{ t("documentsToPrepare") }}</h3>
+              <ul class="document-list">
+                <li v-for="item in selectedGuide.documentGuide.items" :key="item.label">
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.detail }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="document-sources">
+              <span>{{ t("officialSources") }}</span>
+              <a
+                v-for="source in selectedGuide.documentGuide.sources"
+                :key="source.url"
+                :href="source.url"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {{ source.label }}
+              </a>
+            </div>
+          </article>
+
+          <ol class="step-list">
+            <li v-for="(step, index) in selectedGuide.steps" :key="step.title" class="step-card">
+              <label class="step-check">
+                <input
+                  type="checkbox"
+                  :checked="isStepDone(selectedGuide.id, index)"
+                  @change="toggleStep(selectedGuide.id, index)"
+                />
+                <span>{{ index + 1 }}</span>
+              </label>
+
+              <div class="step-content">
+                <div class="step-heading">
+                  <div>
+                    <h2>{{ step.title }}</h2>
+                    <p>{{ step.detail }}</p>
+                  </div>
+                  <span v-if="step.important" class="important">{{ t("important") }}</span>
+                </div>
+
+                <div class="step-footer">
+                  <span>{{ getAgency(step.agency)?.short }}</span>
+                  <a v-if="step.service" :href="step.service" target="_blank" rel="noreferrer">{{ t("goToService") }}</a>
+                </div>
+              </div>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 

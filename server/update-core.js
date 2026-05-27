@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { agencies, guides, services, sourceNotes } from "../src/data/content.js";
+import { agencies, guideDocumentGuides, guides, services, sourceNotes } from "../src/data/content.js";
 
 export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export const DEFAULT_FETCH_TIMEOUT_MS = 15000;
@@ -22,6 +22,9 @@ export function collectSources() {
   agencies.forEach((agency) => add(agency.url, agency.name, "agency"));
   guides.forEach((guide) => {
     guide.steps.forEach((step) => add(step.service, `${guide.title}: ${step.title}`, "guide-step"));
+  });
+  Object.entries(guideDocumentGuides).forEach(([guideId, documentGuide]) => {
+    documentGuide.sources?.forEach((source) => add(source.url, source.label, `guide-document:${guideId}`));
   });
 
   return [...sources.values()].sort((a, b) => a.url.localeCompare(b.url));
